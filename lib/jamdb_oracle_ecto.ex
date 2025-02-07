@@ -20,12 +20,12 @@ defmodule Ecto.Adapters.Jamdb.Oracle do
   def loaders(:map, type),        do: [&json_decode/1, type]
   def loaders(:float, type),      do: [&float_decode/1, type]
   def loaders(:boolean, type),    do: [&bool_decode/1, type]
-  def loaders(:binary_id, type),  do: [Ecto.UUID, type]
+  def loaders(:binary_id, type),  do: [Jamdb.Oracle.UUID, type]
   def loaders(_, type),           do: [type]
 
   @impl true
   def dumpers({:map, _}, type),   do: [&Ecto.Type.embedded_dump(type, &1, :json)]
-  def dumpers(:binary_id, type),  do: [type, Ecto.UUID]
+  def dumpers(:binary_id, type),  do: [type, Jamdb.Oracle.UUID]
   def dumpers(_, type),           do: [type]
 
   defp bool_decode("0"), do: {:ok, false}
