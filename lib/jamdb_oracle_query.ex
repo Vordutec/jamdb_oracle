@@ -70,8 +70,10 @@ defmodule Jamdb.Oracle.Query do
     ["DELETE FROM ", rows, where]
   end
 
+  def insert(prefix, table, header, rows, on_conflict, returning, placeholders \\ [])
+
   @doc false
-  def insert(prefix, table, header, rows, _on_conflict, returning, placeholders \\ []) do
+  def insert(prefix, table, header, rows, _on_conflict, returning, placeholders) when length(rows) == 1 do
     counter_offset = length(placeholders) + 1
     from = insert_all(rows, counter_offset)
     values =
@@ -82,6 +84,26 @@ defmodule Jamdb.Oracle.Query do
       end
 
     ["INSERT INTO ", quote_table(prefix, table), values | returning(returning)]
+  end
+
+@doc false
+  def insert(prefix, table, header, rows, _on_conflict, _returning, placeholders) do
+    counter_offset = length(placeholders) + 1
+
+    {into_clauses, _} =
+        Enum.map_reduce(rows, counter_offset, fn row, counter ->
+          {values, new_counter} = insert_each(row, counter)
+          columns =
+            if header == [] do
+              []
+            else
+              [?(, intersperse_map(header, ?,, &quote_name/1), ?)]
+            end
+          into_clause = ["INTO ", quote_table(prefix, table), columns, " VALUES (", values, ?)]
+          {into_clause, new_counter}
+        end)
+
+      ["INSERT ALL ", Enum.intersperse(into_clauses, " "), " SELECT 1 FROM DUAL"]
   end
 
   defp insert_all(query = %Ecto.Query{}, _counter) do
