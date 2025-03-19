@@ -302,6 +302,7 @@ defimpl DBConnection.Query, for: Jamdb.Oracle.Query do
 
   defp decode(:null), do: nil
   defp decode({elem}) when is_number(elem), do: elem
+  defp decode({date, {0, 0, 0}}) when is_tuple(date), do: to_date({date})
   defp decode({date, time}) when is_tuple(date), do: to_naive({date, time})
   defp decode({date, time, tz}) when is_tuple(date), do: to_date({date, time, tz})
   defp decode(elem) when is_list(elem), do: to_binary(elem)
@@ -372,6 +373,8 @@ defimpl DBConnection.Query, for: Jamdb.Oracle.Query do
     do: NaiveDateTime.from_erl!({date, {hour, min, sec}})
   defp to_naive({date, {hour, min, sec}}),
     do: NaiveDateTime.from_erl!({date, {hour, min, trunc(sec)}}, parse_sec(sec))
+
+  defp to_date({date}), do: Date.from_erl!(date)
 
   defp to_date({{year, month, day}, {hour, min, sec}, tz}),
     do: %DateTime{year: year, month: month, day: day, hour: hour, minute: min,
